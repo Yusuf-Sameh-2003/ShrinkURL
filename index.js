@@ -7,7 +7,6 @@ const dotenv = require("dotenv");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const validUrl = require("valid-url");
-const expressMongoSanitize = require("express-mongo-sanitize");
 const normalizeUrl = require("normalize-url");
 const cors = require("cors");
 
@@ -27,14 +26,6 @@ app.use(
             styleSrc: ["'self'", "'unsafe-inline'"]
         }
     })
-);
-app.use(
-  expressMongoSanitize({
-    replaceWith: "_",
-    onSanitize: ({ key }) => {
-      console.warn("Sanitized:", key);
-    }
-  })
 );
 app.use(rateLimit({
     windowMs: 15 * 60 * 1000,
