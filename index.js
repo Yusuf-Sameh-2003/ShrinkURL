@@ -10,7 +10,7 @@ app.use(express.json());
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-mongoose.connect("mongodb://localhost:27017/urlshortener");
+mongoose.connect("mongodb+srv://Vercel-Admin-shrinkurl-db:ocNyrhemiM3fucEJ@shrinkurl-db.rf4nr8m.mongodb.net/?retryWrites=true&w=majority");
 
 mongoose.connection.on("connected", () => {
     console.log("Connected to MongoDB...");
