@@ -94,11 +94,6 @@ app.get("/:shortUrl", async (req, res) => {
     }
 });
 
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ error: "Something went wrong" });
-});
-
 app.listen(3001, () => {
     console.log("Server started on port 3001");
 });
