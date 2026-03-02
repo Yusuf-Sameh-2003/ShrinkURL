@@ -1,17 +1,42 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const shortid = require("shortid");
+const crypto = require("crypto");
 const path = require("path");
 const urlshortenerSchema = require("./models/urlshortenerSchema.js");
 const dotenv = require("dotenv");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+const validUrl = require("valid-url");
+const expressMongoSanitize = require("express-mongo-sanitize");
+const normalizeUrl = require("normalize-url");
+const cors = require("cors");
+
 
 dotenv.config();
 
 const app = express();
 
-app.use(express.json());
+app.use(express.json({ limit: "10kb" }));
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
+app.use(
+    helmet.contentSecurityPolicy({
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'"]
+        }
+    })
+);
+app.use(expressMongoSanitize());
+app.use(rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100
+}));
+app.use(cors({
+    origin: "https://shurlplus.vercel.app",
+    methods: ["GET", "POST"],
+}));
 
 mongoose.connect(process.env.MONGODB_URI);
 
@@ -28,25 +53,50 @@ app.get("/", (req, res) => {
 });
 
 app.post("/shorten", async (req, res) => {
-    const { originalUrl } = req.body;
-    const shortUrl = shortid.generate();
-    const urlshortener = new urlshortenerSchema({
-        originalUrl,
-        shortUrl
-    });
-    await urlshortener.save();
-    res.json(urlshortener);
+    try {
+        const { originalUrl } = req.body;
+        const normalizedUrl = normalizeUrl(originalUrl, { forceHttps: true });
+        if (!validUrl.isUri(normalizedUrl)) {
+            return res.status(400).json({ error: "Invalid URL" });
+        }
+        const shortUrl = crypto.randomBytes(6).toString("hex");
+        const urlshortener = new urlshortenerSchema({
+            originalUrl,
+            shortUrl
+        });
+        await urlshortener.save();
+        res.json(urlshortener);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
 });
 
 app.get("/:shortUrl", async (req, res) => {
-    const { shortUrl } = req.params;
-    const urlshortener = await urlshortenerSchema.findOne({ shortUrl });
-    if (urlshortener) {
-        //res.redirect(urlshortener.originalUrl);
+    try {
+        const { shortUrl } = req.params;
+
+        if (!/^[a-f0-9]{12}$/.test(shortUrl)) {
+            return res.status(400).json({ error: "Invalid short URL" });
+        }
+
+        const urlshortener = await urlshortenerSchema.findOne({ shortUrl });
+
+        if (!urlshortener) {
+            return res.status(404).json({ error: "URL not found" });
+        }
+
         res.render("load", { url: urlshortener.originalUrl });
-    } else {
-        res.status(404).json({ error: "URL not found" });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Internal Server Error" });
     }
+});
+
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({ error: "Something went wrong" });
 });
 
 app.listen(3001, () => {
