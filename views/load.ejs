@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShrinkURL - Redirecting...</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #080c14;
+            --bg-secondary: #0d1320;
+            --fg: #e8eced;
+            --muted: #5a6578;
+            --accent: #00e5c7;
+            --accent-dim: rgba(0, 229, 199, 0.15);
+            --card: #111827;
+            --border: #1e293b;
+            --danger: #ff4757;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .font-display {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        /* Grid background */
+        .grid-bg {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0, 229, 199, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 229, 199, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Gradient orbs */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(100px);
+            pointer-events: none;
+            opacity: 0.35;
+        }
+
+        .orb-1 {
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+            top: -200px;
+            right: -100px;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .orb-2 {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, #6366f1 0%, transparent 70%);
+            bottom: -150px;
+            left: -100px;
+            animation: float 25s ease-in-out infinite reverse;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            33% {
+                transform: translate(30px, -30px) scale(1.05);
+            }
+
+            66% {
+                transform: translate(-20px, 20px) scale(0.95);
+            }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--muted);
+        }
+
+        /* Glass card */
+        .glass-card {
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            border-color: rgba(0, 229, 199, 0.25);
+        }
+
+        /* Ad placeholder */
+        .ad-placeholder {
+            background: linear-gradient(135deg, var(--card) 0%, var(--bg-secondary) 100%);
+            border: 1px dashed var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ad-placeholder::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(45deg,
+                    transparent,
+                    transparent 10px,
+                    rgba(0, 229, 199, 0.02) 10px,
+                    rgba(0, 229, 199, 0.02) 20px);
+        }
+
+        /* Timer circle */
+        .timer-circle {
+            position: relative;
+            width: 220px;
+            height: 220px;
+        }
+
+        .timer-circle svg {
+            transform: rotate(-90deg);
+        }
+
+        .timer-circle .bg-circle {
+            fill: none;
+            stroke: var(--border);
+            stroke-width: 10;
+        }
+
+        .timer-circle .progress-circle {
+            fill: none;
+            stroke: var(--accent);
+            stroke-width: 10;
+            stroke-linecap: round;
+            stroke-dasharray: 597.08;
+            /* 2 * π * 95 */
+            stroke-dashoffset: 0;
+            transition: stroke-dashoffset 1s linear;
+            filter: drop-shadow(0 0 8px rgba(0, 229, 199, 0.6));
+        }
+
+        .timer-text {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .timer-number {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            line-height: 1;
+            background: linear-gradient(135deg, var(--fg) 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            transition: transform 0.2s ease;
+        }
+
+        .timer-number.tick {
+            transform: scale(1.1);
+        }
+
+        /* Progress bar */
+        .progress-bar {
+            background: var(--border);
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            background: linear-gradient(90deg, var(--accent), #6366f1);
+            height: 100%;
+            transition: width 1s linear;
+        }
+
+        /* Button */
+        .btn-primary {
+            background: var(--accent);
+            color: var(--bg);
+            font-weight: 600;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.5s ease;
+        }
+
+        .btn-primary:hover::before {
+            transform: translateX(100%);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 229, 199, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        /* Ad button */
+        .ad-btn {
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            background: transparent;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .ad-btn:hover {
+            background: var(--accent-dim);
+        }
+
+        /* Animations */
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(1);
+                opacity: 0.6;
+            }
+
+            100% {
+                transform: scale(1.35);
+                opacity: 0;
+            }
+        }
+
+        .animate-slide-up {
+            animation: slideUp 0.6s ease forwards;
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.6s ease forwards;
+        }
+
+        .stagger-1 {
+            animation-delay: 0.1s;
+            opacity: 0;
+        }
+
+        .stagger-2 {
+            animation-delay: 0.2s;
+            opacity: 0;
+        }
+
+        .stagger-3 {
+            animation-delay: 0.3s;
+            opacity: 0;
+        }
+
+        .stagger-4 {
+            animation-delay: 0.4s;
+            opacity: 0;
+        }
+
+        .stagger-5 {
+            animation-delay: 0.5s;
+            opacity: 0;
+        }
+
+        .stagger-6 {
+            animation-delay: 0.6s;
+            opacity: 0;
+        }
+
+        .stagger-7 {
+            animation-delay: 0.7s;
+            opacity: 0;
+        }
+
+        /* Pulse ring around timer */
+        .pulse-ring {
+            position: absolute;
+            inset: -10px;
+            border-radius: 50%;
+            border: 2px solid rgba(0, 229, 199, 0.3);
+            animation: pulse-ring 2s ease-out infinite;
+        }
+
+        /* Skip button glow when ready */
+        .btn-primary.ready {
+            animation: glow 1.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from {
+                box-shadow: 0 0 10px rgba(0, 229, 199, 0.4);
+            }
+
+            to {
+                box-shadow: 0 0 30px rgba(0, 229, 199, 0.9);
+            }
+        }
+
+        /* Focus states */
+        button:focus-visible,
+        a:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        /* Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Background -->
+    <div class="grid-bg"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <!-- Page wrapper -->
+    <div class="relative z-10 min-h-screen flex flex-col">
+
+        <!-- Header -->
+        <header class="p-4 border-b border-[var(--border)]">
+            <div class="max-w-5xl mx-auto flex items-center justify-between">
+                <a href="/" class="font-display font-bold text-lg flex items-center gap-2">
+                    <svg class="w-7 h-7" viewBox="0 0 32 32" fill="none">
+                        <rect width="32" height="32" rx="8" fill="var(--accent)" />
+                        <path d="M10 16L14 12L18 16L22 12" stroke="var(--bg)" stroke-width="2.5" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        <path d="M10 20L14 16L18 20L22 16" stroke="var(--bg)" stroke-width="2.5" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                    <span>ShrinkURL</span>
+                </a>
+                <div class="text-sm text-[var(--muted)] flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-[var(--accent)] animate-pulse inline-block"></span>
+                    Preparing redirect…
+                </div>
+            </div>
+        </header>
+
+        <!-- Main content -->
+        <main class="flex-1 flex flex-col items-center px-4 py-10 gap-8">
+
+            <!-- ─── TOP ADS (3 columns) ─── -->
+            <section class="w-full max-w-5xl animate-slide-up stagger-1">
+                <p class="text-xs text-[var(--muted)] uppercase tracking-widest mb-3 text-center">Sponsored</p>
+                <div class="grid sm:grid-cols-3 gap-4">
+
+                    <!-- Top Ad 1 -->
+                    <div
+                        class="ad-placeholder rounded-2xl p-5 flex flex-col items-center justify-center text-center min-h-[160px]">
+                        <span class="text-[10px] text-[var(--muted)] uppercase tracking-wider mb-3">Advertisement</span>
+                        <div
+                            class="w-12 h-12 rounded-xl bg-[var(--accent-dim)] flex items-center justify-center mb-3 mx-auto">
+                            <svg class="w-6 h-6 text-[var(--accent)]" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                        </div>
+                        <p class="font-display font-semibold text-sm mb-1">Boost Productivity</p>
+                        <p class="text-xs text-[var(--muted)] mb-3">Premium tools for modern teams</p>
+                        <button class="ad-btn text-xs px-3 py-1.5 rounded-lg">Learn More</button>
+                    </div>
+
+                    <!-- Top Ad 2 -->
+                    <div
+                        class="ad-placeholder rounded-2xl p-5 flex flex-col items-center justify-center text-center min-h-[160px]">
+                        <span class="text-[10px] text-[var(--muted)] uppercase tracking-wider mb-3">Advertisement</span>
+                        <div
+                            class="w-12 h-12 rounded-xl bg-[var(--accent-dim)] flex items-center justify-center mb-3 mx-auto">
+                            <svg class="w-6 h-6 text-[var(--accent)]" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            </svg>
+                        </div>
+                        <p class="font-display font-semibold text-sm mb-1">Secure Cloud Storage</p>
+                        <p class="text-xs text-[var(--muted)] mb-3">End-to-end encrypted file sharing</p>
+                        <button class="ad-btn text-xs px-3 py-1.5 rounded-lg">Try Free</button>
+                    </div>
+
+                    <!-- Top Ad 3 -->
+                    <div
+                        class="ad-placeholder rounded-2xl p-5 flex flex-col items-center justify-center text-center min-h-[160px]">
+                        <span class="text-[10px] text-[var(--muted)] uppercase tracking-wider mb-3">Advertisement</span>
+                        <div
+                            class="w-12 h-12 rounded-xl bg-[var(--accent-dim)] flex items-center justify-center mb-3 mx-auto">
+                            <svg class="w-6 h-6 text-[var(--accent)]" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" />
+                            </svg>
+                        </div>
+                        <p class="font-display font-semibold text-sm mb-1">Developer API</p>
+                        <p class="text-xs text-[var(--muted)] mb-3">Integrate in minutes with our REST API</p>
+                        <button class="ad-btn text-xs px-3 py-1.5 rounded-lg">Get API Key</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ─── COUNTDOWN TIMER ─── -->
+            <section class="flex flex-col items-center gap-6 animate-slide-up stagger-3">
+                <!-- Heading -->
+                <div class="text-center">
+                    <h1 class="font-display text-2xl sm:text-3xl font-bold mb-1">Almost there…</h1>
+                    <p class="text-[var(--muted)] text-sm">You'll be redirected automatically in a moment</p>
+                </div>
+
+                <!-- Destination badge -->
+                <div class="glass-card rounded-xl px-4 py-2 flex items-center gap-2 text-sm max-w-sm w-full">
+                    <svg class="w-4 h-4 text-[var(--accent)] flex-shrink-0" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    </svg>
+                    <span class="text-[var(--muted)] truncate text-xs">→ <span id="dest-label"
+                            class="text-[var(--accent)]">
+                            <%= url %>
+                        </span></span>
+                </div>
+
+                <!-- Circle timer -->
+                <div class="relative">
+                    <div class="pulse-ring"></div>
+                    <div class="timer-circle">
+                        <svg width="220" height="220" viewBox="0 0 220 220">
+                            <circle class="bg-circle" cx="110" cy="110" r="95" />
+                            <circle id="progress-circle" class="progress-circle" cx="110" cy="110" r="95" />
+                        </svg>
+                        <div class="timer-text">
+                            <span id="timer-count" class="timer-number">10</span>
+                            <span class="text-sm text-[var(--muted)]">seconds</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Linear progress bar -->
+                <div class="w-full max-w-sm">
+                    <div class="progress-bar h-1.5 rounded-full">
+                        <div id="progress-bar-fill" class="progress-bar-fill rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Skip button (shown when timer ends) -->
+                <button id="skip-btn"
+                    class="btn-primary px-8 py-3 rounded-xl text-base flex items-center gap-2 opacity-0 pointer-events-none transition-opacity duration-500"
+                    onclick="redirect()">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                    Continue to Destination
+                </button>
+            </section>
+
+            <!-- ─── BOTTOM ADS (3 columns) ─── -->
+            <section class="w-full max-w-5xl animate-slide-up stagger-5">
+                <p class="text-xs text-[var(--muted)] uppercase tracking-widest mb-3 text-center">Sponsored</p>
+                <div class="grid sm:grid-cols-3 gap-4">
+
+                    <!-- Bottom Ad 1 -->
+                    <div
+                        class="ad-placeholder rounded-2xl p-5 flex flex-col items-center justify-center text-center min-h-[160px]">
+                        <span class="text-[10px] text-[var(--muted)] uppercase tracking-wider mb-3">Advertisement</span>
+                        <div
+                            class="w-12 h-12 rounded-xl bg-[var(--accent-dim)] flex items-center justify-center mb-3 mx-auto">
+                            <svg class="w-6 h-6 text-[var(--accent)]" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <p class="font-display font-semibold text-sm mb-1">Schedule Smarter</p>
+                        <p class="text-xs text-[var(--muted)] mb-3">AI-powered calendar & reminders</p>
+                        <button class="ad-btn text-xs px-3 py-1.5 rounded-lg">Start Free Trial</button>
+                    </div>
+
+                    <!-- Bottom Ad 2 -->
+                    <div
+                        class="ad-placeholder rounded-2xl p-5 flex flex-col items-center justify-center text-center min-h-[160px]">
+                        <span class="text-[10px] text-[var(--muted)] uppercase tracking-wider mb-3">Advertisement</span>
+                        <div
+                            class="w-12 h-12 rounded-xl bg-[var(--accent-dim)] flex items-center justify-center mb-3 mx-auto">
+                            <svg class="w-6 h-6 text-[var(--accent)]" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                            </svg>
+                        </div>
+                        <p class="font-display font-semibold text-sm mb-1">Custom Short Links</p>
+                        <p class="text-xs text-[var(--muted)] mb-3">Branded links that boost click-through</p>
+                        <button class="ad-btn text-xs px-3 py-1.5 rounded-lg">Get Started</button>
+                    </div>
+
+                    <!-- Bottom Ad 3 -->
+                    <div
+                        class="ad-placeholder rounded-2xl p-5 flex flex-col items-center justify-center text-center min-h-[160px]">
+                        <span class="text-[10px] text-[var(--muted)] uppercase tracking-wider mb-3">Advertisement</span>
+                        <div
+                            class="w-12 h-12 rounded-xl bg-[var(--accent-dim)] flex items-center justify-center mb-3 mx-auto">
+                            <svg class="w-6 h-6 text-[var(--accent)]" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                        </div>
+                        <p class="font-display font-semibold text-sm mb-1">Analytics Pro</p>
+                        <p class="text-xs text-[var(--muted)] mb-3">Track real-time link performance</p>
+                        <button class="ad-btn text-xs px-3 py-1.5 rounded-lg">View Demo</button>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="p-4 border-t border-[var(--border)] text-center">
+            <p class="text-xs text-[var(--muted)]">
+                This redirect page helps keep ShrinkURL free.
+                <a href="/" class="text-[var(--accent)] hover:underline ml-1">Learn more</a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // ── Config ──────────────────────────────────────────────
+        const TOTAL_SECONDS = 10;
+        const DESTINATION = "<%= url %>";   // injected by EJS
+        const CIRCUMFERENCE = 2 * Math.PI * 95;  // r = 95
+
+        // ── DOM refs ────────────────────────────────────────────
+        const progressCircle = document.getElementById('progress-circle');
+        const timerCount = document.getElementById('timer-count');
+        const progressBarFill = document.getElementById('progress-bar-fill');
+        const skipBtn = document.getElementById('skip-btn');
+
+        // Initialise circle
+        progressCircle.style.strokeDasharray = CIRCUMFERENCE;
+        progressCircle.style.strokeDashoffset = 0;
+
+        let secondsLeft = TOTAL_SECONDS;
+
+        function redirect() {
+            window.location.href = DESTINATION;
+        }
+
+        function tick() {
+            secondsLeft--;
+
+            // Animate number
+            timerCount.classList.remove('tick');
+            void timerCount.offsetWidth; // reflow
+            timerCount.classList.add('tick');
+            setTimeout(() => timerCount.classList.remove('tick'), 200);
+
+            timerCount.textContent = secondsLeft;
+
+            // Update circle (drain clockwise)
+            const progress = secondsLeft / TOTAL_SECONDS;
+            progressCircle.style.strokeDashoffset = CIRCUMFERENCE * (1 - progress);
+
+            // Update colour as time runs out
+            if (secondsLeft <= 3) {
+                progressCircle.style.stroke = '#ff4757';
+                progressCircle.style.filter = 'drop-shadow(0 0 8px rgba(255,71,87,0.7))';
+            } else if (secondsLeft <= 5) {
+                progressCircle.style.stroke = '#f59e0b';
+                progressCircle.style.filter = 'drop-shadow(0 0 8px rgba(245,158,11,0.6))';
+            }
+
+            // Linear progress bar
+            const pct = ((TOTAL_SECONDS - secondsLeft) / TOTAL_SECONDS) * 100;
+            progressBarFill.style.width = pct + '%';
+
+            if (secondsLeft <= 0) {
+                clearInterval(timer);
+                redirect();
+                return;
+            }
+        }
+
+        // Start countdown
+        const timer = setInterval(tick, 1000);
+
+        // Show skip button after 3 seconds
+        setTimeout(() => {
+            skipBtn.style.opacity = '1';
+            skipBtn.style.pointerEvents = 'auto';
+            skipBtn.classList.add('ready');
+        }, 3000);
+    </script>
+</body>
+
+</html>
