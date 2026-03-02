@@ -3,6 +3,9 @@ const mongoose = require("mongoose");
 const shortid = require("shortid");
 const path = require("path");
 const urlshortenerSchema = require("./models/urlshortenerSchema.js");
+const dotenv = require("dotenv");
+
+dotenv.config();
 
 const app = express();
 
@@ -10,7 +13,7 @@ app.use(express.json());
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-mongoose.connect("mongodb+srv://Vercel-Admin-shrinkurl-db:ocNyrhemiM3fucEJ@shrinkurl-db.rf4nr8m.mongodb.net/?retryWrites=true&w=majority");
+mongoose.connect(process.env.MONGODB_URI);
 
 mongoose.connection.on("connected", () => {
     console.log("Connected to MongoDB...");
