@@ -19,13 +19,37 @@ app.use(express.json({ limit: "10kb" }));
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.use(
-    helmet.contentSecurityPolicy({
-        directives: {
-            defaultSrc: ["'self'"],
-            scriptSrc: ["'self'"],
-            styleSrc: ["'self'", "'unsafe-inline'"]
-        }
-    })
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'self'"],
+
+      scriptSrc: [
+        "'self'",
+        "'unsafe-inline'",               // لأن عندك inline JS
+        "https://cdn.tailwindcss.com"
+      ],
+
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "https://fonts.googleapis.com"
+      ],
+
+      fontSrc: [
+        "'self'",
+        "https://fonts.gstatic.com"
+      ],
+
+      imgSrc: [
+        "'self'",
+        "data:"
+      ],
+
+      connectSrc: [
+        "'self'"
+      ]
+    }
+  })
 );
 app.use(rateLimit({
     windowMs: 15 * 60 * 1000,
