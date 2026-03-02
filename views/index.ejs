@@ -772,7 +772,7 @@
                     data: {
                         originalUrl: data.originalUrl,
                         shortCode: data.shortUrl,
-                        shortUrl: `localhost:3000/${data.shortUrl}`,
+                        shortUrl: `https://shrink-url-gray.vercel.app/${data.shortUrl}`,
                         createdAt: data.createdAt
                     }
                 };
@@ -850,7 +850,7 @@
             elements.recentUrls.innerHTML = mockRecentUrls.map((item, index) => `
         <div class="glass-card rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-slide-up" style="animation-delay: ${index * 0.1}s">
           <div class="flex-1 min-w-0">
-            <a href="#/r/${item.short}" class="font-display font-semibold text-[var(--accent)] hover:underline">localhost:3000/${item.short}</a>
+            <a href="#/r/${item.short}" class="font-display font-semibold text-[var(--accent)] hover:underline">shrink-url-gray.vercel.app/${item.short}</a>
             <p class="text-sm text-[var(--muted)] truncate mt-1">${item.original}</p>
           </div>
           <div class="flex items-center gap-4 text-sm">
